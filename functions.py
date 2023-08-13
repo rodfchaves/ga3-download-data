@@ -1,9 +1,10 @@
-from apiclient.discovery import build
+from googleapiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
 import csv
 from datetime import datetime
-from config import *
+from configs.config import *
 import os
+import time
 
 def initialize_analyticsreporting():
   """Initializes an Analytics Reporting API V4 service object.
@@ -16,28 +17,48 @@ def initialize_analyticsreporting():
 
   # Build the service object.
   analytics = build('analyticsreporting', 'v4', credentials=credentials)
-
+  
   return analytics
 
 
-def get_report(analytics, reportRequests):
-  """Queries the Analytics Reporting API V4.
+def get_report(analytics, reportRequests, num, FILENAME, PAGE_TOKEN=0):
+  try:
+    """Queries the Analytics Reporting API V4.
 
-  Args:
-    analytics: An authorized Analytics Reporting API V4 service object.
-  Returns:
-    The Analytics Reporting API V4 response.
-  """
-  return analytics.reports().batchGet(body=reportRequests).execute()
+    Args:
+      analytics: An authorized Analytics Reporting API V4 service object.
+    Returns:
+      The Analytics Reporting API V4 response.
+    """
+    response = analytics.reports().batchGet(body=reportRequests).execute()
+    data = response['reports'][0]['data']['rows']
+    download_csv(data, num, reportRequests, FILENAME, PAGE_TOKEN)
+    time.sleep(10)
 
+    if response['reports'][0]['nextPageToken']:
+      PAGE_TOKEN = response['reports'][0]['nextPageToken']
+      reportRequests['reportRequests'][0]['pageToken'] = PAGE_TOKEN
+      get_report(analytics, reportRequests, num, FILENAME, PAGE_TOKEN)
+  except Exception as e:
+    if str(e).strip("'") == 'rows':
+      print('No data found for ', FILENAME, '# ', num) 
+    elif str(e).strip("'") == 'nextPageToken':
+      print('No more data found for ', FILENAME, '# ', num, ' With page token: ', PAGE_TOKEN)
+    else:      
+      print ('Error' , FILENAME, '# ', num, ' Exception: ', str(e))
+     
+ 
 
-def download_csv(response, num, reportRequest, filename):
+def download_csv(response, num, reportRequest, FILENAME, PAGE_TOKEN=0):
   # Create a CSV file
-  view = VIEW_ID.split(':')[1] + filename #change this to change the name of the file you want to save
+  view = VIEW_ID.split(':')[1] + FILENAME #change this to change the name of the file you want to save
   fileformat = '.csv'
   fieldnames = []
-  
+    
   #Create a folder to save the csv files
+  if os.path.exists("csv") == False:
+    os.mkdir("csv")
+
   folder_path = "csv/" + VIEW_ID.split(':')[1]
   if os.path.exists(folder_path) == False:
     os.mkdir(folder_path)
@@ -68,7 +89,7 @@ def download_csv(response, num, reportRequest, filename):
       row_to_write = {}
 
       while i < len(row['dimensions']):
-        if  fieldnames[fn] == 'date':
+        if fieldnames[fn] == 'date':
           row_to_write[fieldnames[fn]] = parsed_date
         else:
           the_row = row['dimensions'][i]
