@@ -7,11 +7,11 @@ print(MAIN_DIRECTORY)
 KEY_FILE = 'api-secret.json'
 SCOPES = ['https://www.googleapis.com/auth/analytics.readonly']
 KEY_FILE_LOCATION = os.path.join(MAIN_DIRECTORY, 'ga3-download-data/api-key', KEY_FILE)
-VIEW_ID = 'ga:178851244'
-START_DATE = '2022-01-01'
-END_DATE = '2022-12-31'
-PAGE_SIZE = 1000
-PAGE_TOKEN = "0"
+VIEW_ID = 'ga:0000000' #Replace with your own view ID
+START_DATE = '2022-01-01' #Replace with your own start date
+END_DATE = '2022-12-31' #Replace with your own end date
+PAGE_SIZE = 1000 #Replace with your own page size, max is 100000
+PAGE_TOKEN = "0" #This is the pagination value, you can leave it as it is, the app will make the pagination for you.
 #If you want to pass the correct name of the goals, change the value of the specific goal to the correct name you want. i.e. 'ga:goal1Completions': 'goal1Completions' to 'ga:goal1Completions': 'Purchase'
 goals_names = {
     'ga:goal1Completions': 'goal1Completions',
